@@ -1,6 +1,5 @@
 package com.chrisroid.currencyconverter.ui.screens
 
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Menu
@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,7 +64,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
     var amount by remember { mutableStateOf("1") }
     var selectedBase by remember { mutableStateOf("EUR") }
-    var selectedTarget by remember { mutableStateOf("PLN") }
+    var selectedTarget by remember { mutableStateOf("NGN") }
     val exchangeRate by viewModel.exchangeRate.collectAsState()
     val convertedAmount by remember(amount, exchangeRate) {
         mutableStateOf(
@@ -78,8 +79,8 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
 
 
-    LaunchedEffect(selectedTarget) {
-        viewModel.fetchExchangeRate(selectedBase, selectedTarget, amount)
+    LaunchedEffect(selectedTarget, selectedBase) {
+        viewModel.fetchExchangeRate(selectedBase, selectedTarget)
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
@@ -113,8 +114,9 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
         // First text field for the base currency (EUR)
         OutlinedTextField(
             value = amount,
-            onValueChange = {
-                amount = it
+            onValueChange = { newValue ->
+                val numericValue = newValue.toDoubleOrNull() ?: 1.0
+                amount = if (numericValue < 1) "1" else numericValue.toInt().toString()
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
@@ -131,8 +133,12 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
             colors = TextFieldDefaults.outlinedTextFieldColors(
                 focusedBorderColor = Color(0xFF0055FF),
                 unfocusedBorderColor = Color.Gray
+            ),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Number
             )
         )
+
 
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -170,14 +176,13 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
             CurrencyDropdown(
                 selectedCurrency = selectedBase,
                 onCurrencySelected = { selectedBase = it },
-                modifier = Modifier.weight(1f) // Ensures equal space
+                modifier = Modifier.weight(1f),
+                isBaseCurrency = true
             )
 
-            Spacer(modifier = Modifier.width(16.dp)) // Adds spacing between dropdowns
+            Spacer(modifier = Modifier.width(16.dp))
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("←", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                 Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
             }
@@ -187,7 +192,8 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
             CurrencyDropdown(
                 selectedCurrency = selectedTarget,
                 onCurrencySelected = { selectedTarget = it },
-                modifier = Modifier.weight(1f) // Ensures equal space
+                modifier = Modifier.weight(1f),
+                isBaseCurrency = false
             )
         }
 
@@ -197,7 +203,9 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
         // Convert button
         Button(
-            onClick = { /* Conversion Logic - Placeholder */ },
+            onClick = {
+                viewModel.fetchExchangeRate(selectedBase, selectedTarget)
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C896))
@@ -236,7 +244,8 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 fun CurrencyDropdown(
     selectedCurrency: String,
     onCurrencySelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isBaseCurrency: Boolean // Determines whether this is the base or target dropdown
 ) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -251,6 +260,9 @@ fun CurrencyDropdown(
             }
         }
     }
+
+    // Filter available currencies based on whether it's base or target
+    val availableCurrencies = if (isBaseCurrency) listOf("EUR") else currencyToCountryMap.keys.filter { it != "EUR" }
 
     Box(
         modifier = modifier
@@ -294,7 +306,7 @@ fun CurrencyDropdown(
             onDismissRequest = { expanded = false },
             modifier = Modifier.fillMaxWidth(0.45f)
         ) {
-            currencyToCountryMap.keys.forEach { currencyCode ->
+            availableCurrencies.forEach { currencyCode ->
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
@@ -322,6 +334,7 @@ fun CurrencyDropdown(
         }
     }
 }
+
 
 
 

@@ -48,7 +48,7 @@ class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepo
         }
     }
 
-    fun fetchExchangeRate(base: String, target: String, amount: String) {
+    fun fetchExchangeRate(base: String, target: String) {
         viewModelScope.launch {
             val apiKey = "b1ec7d255c26e3eb047b505fa720cc02"
             repository.getExchangeRate(base, target, apiKey).collect { result ->
