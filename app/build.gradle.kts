@@ -2,7 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id ("com.google.dagger.hilt.android")
+    id("com.google.devtools.ksp")
     id ("kotlin-kapt")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -53,6 +56,8 @@ dependencies {
 
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation (libs.hilt.android)
+
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.androidx.room.runtime)
@@ -61,6 +66,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.mpandroidchart)
     kapt(libs.androidx.hilt.compiler)
+
+    implementation(libs.logging.interceptor)
+    kapt(libs.hilt.compiler)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
