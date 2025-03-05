@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -13,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +32,7 @@ import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.murgupluoglu.flagkit.FlagKit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,13 +130,11 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             CurrencyDropdown(
                 selectedCurrency = selectedBase,
-                currencySymbols = currencySymbols,
                 onCurrencySelected = { selectedBase = it }
             )
             Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             CurrencyDropdown(
                 selectedCurrency = selectedTarget,
-                currencySymbols = currencySymbols,
                 onCurrencySelected = { selectedTarget = it }
             )
         }
@@ -182,10 +183,10 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 @Composable
 fun CurrencyDropdown(
     selectedCurrency: String,
-    currencySymbols: Map<String, String>?,
     onCurrencySelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxWidth(0.45f)) {
         Row(
@@ -195,7 +196,26 @@ fun CurrencyDropdown(
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val countryCode = currencyToCountryMap[selectedCurrency] ?: "xx" // Default if not found
+            val flagResId = when (selectedCurrency) {
+                "ANG" -> R.drawable.angola  // Custom Angola flag
+                "BTC" -> R.drawable.btc // Custom Bitcoin flag
+                else -> FlagKit.getResId(context, countryCode)
+            }
+
+            if (flagResId != 0) {
+                Image(
+                    painter = painterResource(id = flagResId),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
             Text(selectedCurrency, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.width(8.dp))
             Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
         }
 
@@ -204,18 +224,44 @@ fun CurrencyDropdown(
             onDismissRequest = { expanded = false },
             modifier = Modifier.fillMaxWidth(0.45f)
         ) {
-            currencySymbols?.forEach { (code, name) ->
+            currencyToCountryMap.keys.forEach { currencyCode ->
                 DropdownMenuItem(
-                    text = { Text("$code") },
                     onClick = {
-                        onCurrencySelected(code)
+                        onCurrencySelected(currencyCode)
                         expanded = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val flagResId = when (currencyCode) {
+                                "ANG" -> R.drawable.angola  // Angola special case
+                                "BTC" -> R.drawable.btc // Bitcoin special case
+                                else -> FlagKit.getResId(context, currencyToCountryMap[currencyCode] ?: "xx")
+                            }
+
+                            if (flagResId != 0) {
+                                Image(
+                                    painter = painterResource(id = flagResId),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(currencyCode, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 )
             }
         }
     }
 }
+
+
 
 @Composable
 fun ExchangeRateGraph(context: Context, rates: List<Double>) {
@@ -255,3 +301,38 @@ fun TabButton(text: String, isActive: Boolean, onClick: (String) -> Unit) {
 fun PreviewCurrencyConverterScreen() {
     CurrencyConverterScreen()
 }
+
+val currencyToCountryMap = mapOf(
+    "AED" to "ae", "AFN" to "af", "ALL" to "al", "AMD" to "am", "ANG" to "an",
+    "AOA" to "ao", "ARS" to "ar", "AUD" to "au", "AWG" to "aw", "AZN" to "az",
+    "BAM" to "ba", "BBD" to "bb", "BDT" to "bd", "BGN" to "bg", "BHD" to "bh",
+    "BIF" to "bi", "BMD" to "bm", "BND" to "bn", "BOB" to "bo", "BRL" to "br",
+    "BSD" to "bs", "BTC" to "xx", "BTN" to "bt", "BWP" to "bw", "BYN" to "by",
+    "CAD" to "ca", "CDF" to "cd", "CHF" to "ch", "CNY" to "cn", "COP" to "co",
+    "CRC" to "cr", "CUP" to "cu", "CVE" to "cv", "CZK" to "cz", "DJF" to "dj",
+    "DKK" to "dk", "DOP" to "do", "DZD" to "dz", "EGP" to "eg", "ERN" to "er",
+    "ETB" to "et", "EUR" to "eu", "FJD" to "fj", "FKP" to "fk", "GBP" to "gb",
+    "GEL" to "ge", "GHS" to "gh", "GIP" to "gi", "GMD" to "gm", "GNF" to "gn",
+    "GTQ" to "gt", "GYD" to "gy", "HKD" to "hk", "HNL" to "hn", "HRK" to "hr",
+    "HTG" to "ht", "HUF" to "hu", "IDR" to "id", "ILS" to "il", "INR" to "in",
+    "IQD" to "iq", "IRR" to "ir", "ISK" to "is", "JMD" to "jm", "JOD" to "jo",
+    "JPY" to "jp", "KES" to "ke", "KGS" to "kg", "KHR" to "kh", "KMF" to "km",
+    "KPW" to "kp", "KRW" to "kr", "KWD" to "kw", "KYD" to "ky", "KZT" to "kz",
+    "LAK" to "la", "LBP" to "lb", "LKR" to "lk", "LRD" to "lr", "LSL" to "ls",
+    "LYD" to "ly", "MAD" to "ma", "MDL" to "md", "MGA" to "mg", "MKD" to "mk",
+    "MMK" to "mm", "MNT" to "mn", "MOP" to "mo", "MRO" to "mr", "MUR" to "mu",
+    "MVR" to "mv", "MWK" to "mw", "MXN" to "mx", "MYR" to "my", "MZN" to "mz",
+    "NAD" to "na", "NGN" to "ng", "NIO" to "ni", "NOK" to "no", "NPR" to "np",
+    "NZD" to "nz", "OMR" to "om", "PAB" to "pa", "PEN" to "pe", "PGK" to "pg",
+    "PHP" to "ph", "PKR" to "pk", "PLN" to "pl", "PYG" to "py", "QAR" to "qa",
+    "RON" to "ro", "RSD" to "rs", "RUB" to "ru", "RWF" to "rw", "SAR" to "sa",
+    "SBD" to "sb", "SCR" to "sc", "SDG" to "sd", "SEK" to "se", "SGD" to "sg",
+    "SHP" to "sh", "SLL" to "sl", "SOS" to "so", "SRD" to "sr", "STD" to "st",
+    "SVC" to "sv", "SYP" to "sy", "SZL" to "sz", "THB" to "th", "TJS" to "tj",
+    "TMT" to "tm", "TND" to "tn", "TOP" to "to", "TRY" to "tr", "TTD" to "tt",
+    "TWD" to "tw", "TZS" to "tz", "UAH" to "ua", "UGX" to "ug", "USD" to "us",
+    "UYU" to "uy", "UZS" to "uz", "VEF" to "ve", "VND" to "vn", "VUV" to "vu",
+    "WST" to "ws", "XAF" to "cm", "XCD" to "ag", "XOF" to "sn", "XPF" to "pf",
+    "YER" to "ye", "ZAR" to "za", "ZMK" to "zm", "ZMW" to "zm", "ZWL" to "zw"
+)
+

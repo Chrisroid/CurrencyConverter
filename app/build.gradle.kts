@@ -70,6 +70,8 @@ dependencies {
     implementation(libs.logging.interceptor)
     kapt(libs.hilt.compiler)
 
+    implementation(libs.flagkit.android)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
