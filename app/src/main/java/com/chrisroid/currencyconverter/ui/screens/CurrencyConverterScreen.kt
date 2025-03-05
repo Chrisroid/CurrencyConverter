@@ -209,30 +209,35 @@ fun CurrencyDropdown(
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxWidth(0.45f)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = true }
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val countryCode = currencyToCountryMap[selectedCurrency] ?: "xx" // Default if not found
-            val flagResId = when (selectedCurrency) {
+    // Precompute flags to avoid lag on menu open
+    val flagCache = remember {
+        currencyToCountryMap.mapValues { (code, countryCode) ->
+            when (code) {
                 "ANG" -> R.drawable.angola  // Custom Angola flag
                 "BTC" -> R.drawable.btc // Custom Bitcoin flag
                 else -> FlagKit.getResId(context, countryCode)
             }
+        }
+    }
 
-            if (flagResId != 0) {
-                Image(
-                    painter = painterResource(id = flagResId),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                )
-            }
+    Box(modifier = Modifier.fillMaxWidth(0.45f)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    expanded = true // Ensure immediate state update
+                }
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val flagResId = flagCache[selectedCurrency] ?: R.drawable.btc
+            Image(
+                painter = painterResource(id = flagResId),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+            )
 
             Spacer(modifier = Modifier.width(8.dp))
             Text(selectedCurrency, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -248,30 +253,22 @@ fun CurrencyDropdown(
             currencyToCountryMap.keys.forEach { currencyCode ->
                 DropdownMenuItem(
                     onClick = {
-                        onCurrencySelected(currencyCode)
                         expanded = false
+                        onCurrencySelected(currencyCode)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     text = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val flagResId = when (currencyCode) {
-                                "ANG" -> R.drawable.angola  // Angola special case
-                                "BTC" -> R.drawable.btc // Bitcoin special case
-                                else -> FlagKit.getResId(context, currencyToCountryMap[currencyCode] ?: "xx")
-                            }
-
-                            if (flagResId != 0) {
-                                Image(
-                                    painter = painterResource(id = flagResId),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                )
-                            }
-
+                            val flagResId = flagCache[currencyCode] ?: R.drawable.btc
+                            Image(
+                                painter = painterResource(id = flagResId),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(currencyCode, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
@@ -281,6 +278,7 @@ fun CurrencyDropdown(
         }
     }
 }
+
 
 
 
