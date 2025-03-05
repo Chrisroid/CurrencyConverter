@@ -48,4 +48,5 @@ object AppModule {
         return retrofit.create(CurrencyApi::class.java)
     }
 
+
 }
