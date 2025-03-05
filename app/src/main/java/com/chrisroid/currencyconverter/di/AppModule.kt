@@ -3,6 +3,8 @@ package com.chrisroid.currencyconverter.di
 import android.app.Application
 import android.content.Context
 import com.chrisroid.currencyconverter.model.api.CurrencyApi
+import com.chrisroid.currencyconverter.model.dao.CurrencyDao
+import com.chrisroid.currencyconverter.model.data.CurrencyDatabase
 import com.chrisroid.currencyconverter.repository.CurrencyRepository
 import dagger.Module
 import dagger.Provides
@@ -46,6 +48,24 @@ object AppModule {
     @Singleton
     fun provideCurrencyApi(retrofit: Retrofit): CurrencyApi {
         return retrofit.create(CurrencyApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCurrencyDatabase(context: Context): CurrencyDatabase {
+        return CurrencyDatabase.getDatabase(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCurrencyDao(database: CurrencyDatabase): CurrencyDao {
+        return database.currencyDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCurrencyRepository(api: CurrencyApi, dao: CurrencyDao): CurrencyRepository {
+        return CurrencyRepository(api, dao)
     }
 
 

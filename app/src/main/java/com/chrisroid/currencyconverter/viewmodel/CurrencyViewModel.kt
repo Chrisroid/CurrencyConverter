@@ -34,7 +34,7 @@ class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepo
 //    }
 
     fun fetchCurrencySymbols() {
-        Log.d("FETCG", "FETCHING HAS STARTED")
+        Log.d("FETCH", "Checking if database is empty before fetching")
         val apiKey = "812b144374f18f73fd5fa73bd008dc1b"
         viewModelScope.launch {
             repository.getCurrencySymbols(apiKey).collect { result ->
