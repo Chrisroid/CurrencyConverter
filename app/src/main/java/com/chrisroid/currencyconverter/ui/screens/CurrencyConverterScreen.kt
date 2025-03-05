@@ -1,5 +1,7 @@
 package com.chrisroid.currencyconverter.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -60,6 +62,8 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.murgupluoglu.flagkit.FlagKit
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,6 +81,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
     var activeTab by remember { mutableStateOf("30 Days") }
 
     val past30DaysRates = listOf(4.1, 4.15, 4.2, 4.25, 4.26, 4.22, 4.3, 4.28, 4.35, 4.4)
+    val past30DaysDates = getLast30DaysLabels()
 
     val currencySymbols by viewModel.currencySymbols.collectAsState()
 
@@ -228,7 +233,6 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val past30DaysDates = listOf("01 Jun", "07 Jun", "15 Jun", "23 Jun", "30 Jun")
 
         ExchangeRateGraph(rates = past30DaysRates, dates = past30DaysDates)
 
@@ -372,8 +376,9 @@ fun ExchangeRateGraph(rates: List<Double>, dates: List<String>) {
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 textColor = android.graphics.Color.WHITE
-                textSize = 12f
+                textSize = 10f
                 granularity = 1f
+                labelRotationAngle = -25f
                 valueFormatter = IndexAxisValueFormatter(dates) // Set dates
                 setDrawGridLines(false) // Hide grid lines
             }
@@ -458,4 +463,14 @@ val currencyToCountryMap = mapOf(
     "WST" to "ws", "XAF" to "cm", "XCD" to "ag", "XOF" to "sn", "XPF" to "pf",
     "YER" to "ye", "ZAR" to "za", "ZMK" to "zm", "ZMW" to "zm", "ZWL" to "zw"
 )
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getLast30DaysLabels(): List<String> {
+    val today = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("dd MMM")
+
+    return (0..30 step 6).map { daysAgo ->
+        today.minusDays((30 - daysAgo).toLong()).format(formatter)
+    }
+}
 
