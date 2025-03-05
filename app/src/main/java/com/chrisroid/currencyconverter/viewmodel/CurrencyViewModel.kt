@@ -1,5 +1,6 @@
 package com.chrisroid.currencyconverter.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chrisroid.currencyconverter.repository.CurrencyRepository
@@ -19,6 +20,9 @@ class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepo
     private val _currencySymbols = MutableStateFlow<Map<String, String>?>(null)
     val currencySymbols = _currencySymbols.asStateFlow()
 
+    init {
+        fetchCurrencySymbols()
+    }
 //    fun fetchExchangeRate(base: String, apiKey: String) {
 //        viewModelScope.launch {
 //            repository.getExchangeRate(base, apiKey).collect { result ->
@@ -29,7 +33,9 @@ class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepo
 //        }
 //    }
 
-    fun fetchCurrencySymbols(apiKey: String) {
+    fun fetchCurrencySymbols() {
+        Log.d("FETCG", "FETCHING HAS STARTED")
+        val apiKey = "812b144374f18f73fd5fa73bd008dc1b"
         viewModelScope.launch {
             repository.getCurrencySymbols(apiKey).collect { result ->
                 result.onSuccess { data ->

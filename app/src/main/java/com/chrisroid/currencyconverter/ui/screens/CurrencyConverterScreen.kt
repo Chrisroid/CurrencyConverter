@@ -3,6 +3,7 @@ package com.chrisroid.currencyconverter.ui.screens
 import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -20,8 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.chrisroid.currencyconverter.MainActivity
 import com.chrisroid.currencyconverter.R
+import com.chrisroid.currencyconverter.viewmodel.CurrencyViewModel
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -29,7 +33,8 @@ import com.github.mikephil.charting.data.LineDataSet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CurrencyConverterScreen() {
+fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
+
     var amount by remember { mutableStateOf("1") }
     var convertedAmount by remember { mutableStateOf("4.264820") } // Dummy value for PLN
     var selectedBase by remember { mutableStateOf("EUR") }
@@ -38,6 +43,9 @@ fun CurrencyConverterScreen() {
     var activeTab by remember { mutableStateOf("30 Days") }
 
     val past30DaysRates = listOf(4.1, 4.15, 4.2, 4.25, 4.26, 4.22, 4.3, 4.28, 4.35, 4.4)
+
+    val currencySymbols by viewModel.currencySymbols.collectAsState()
+
 
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
@@ -117,9 +125,17 @@ fun CurrencyConverterScreen() {
         Spacer(modifier = Modifier.height(16.dp))
         // Currency selection row
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            CurrencyDropdown("EUR", R.drawable.germany) { selectedBase = it }
+            CurrencyDropdown(
+                selectedCurrency = selectedBase,
+                currencySymbols = currencySymbols,
+                onCurrencySelected = { selectedBase = it }
+            )
             Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            CurrencyDropdown("PLN", R.drawable.canada) { selectedTarget = it }
+            CurrencyDropdown(
+                selectedCurrency = selectedTarget,
+                currencySymbols = currencySymbols,
+                onCurrencySelected = { selectedTarget = it }
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -164,16 +180,40 @@ fun CurrencyConverterScreen() {
 }
 
 @Composable
-fun CurrencyDropdown(currencyCode: String, flagRes: Int, onSelection: (String) -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(0.45f)) {
-        Image(
-            painter = painterResource(id = flagRes),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(currencyCode, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+fun CurrencyDropdown(
+    selectedCurrency: String,
+    currencySymbols: Map<String, String>?,
+    onCurrencySelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxWidth(0.45f)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true }
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(selectedCurrency, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.45f)
+        ) {
+            currencySymbols?.forEach { (code, name) ->
+                DropdownMenuItem(
+                    text = { Text("$code") },
+                    onClick = {
+                        onCurrencySelected(code)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }
 

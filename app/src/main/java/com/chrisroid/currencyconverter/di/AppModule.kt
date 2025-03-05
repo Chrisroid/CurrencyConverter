@@ -36,7 +36,7 @@ object AppModule {
             .addInterceptor(logging)
             .build()
         return Retrofit.Builder()
-            .baseUrl("http://data.fixer.io/api/")
+            .baseUrl("https://data.fixer.io/api/")
             .addConverterFactory(GsonConverterFactory.create())
             .client(client)
             .build()
