@@ -49,13 +49,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chrisroid.currencyconverter.R
 import com.chrisroid.currencyconverter.viewmodel.CurrencyViewModel
 import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.murgupluoglu.flagkit.FlagKit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -225,10 +228,9 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Exchange rate graph
-        ExchangeRateGraph(
-            rates = past30DaysRates
-        )
+        val past30DaysDates = listOf("01 Jun", "07 Jun", "15 Jun", "23 Jun", "30 Jun")
+
+        ExchangeRateGraph(rates = past30DaysRates, dates = past30DaysDates)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -339,23 +341,69 @@ fun CurrencyDropdown(
 
 
 @Composable
-fun ExchangeRateGraph(rates: List<Double>) {
-    AndroidView(factory = {
-        LineChart(it).apply {
+fun ExchangeRateGraph(rates: List<Double>, dates: List<String>) {
+    AndroidView(factory = { context ->
+        LineChart(context).apply {
             val entries = rates.mapIndexed { index, rate ->
                 Entry(index.toFloat(), rate.toFloat())
             }
-            val dataSet = LineDataSet(entries, "Exchange Rate")
-            dataSet.color = android.graphics.Color.BLUE
-            dataSet.valueTextColor = android.graphics.Color.BLACK
+
+            val dataSet = LineDataSet(entries, "Exchange Rate").apply {
+                mode = LineDataSet.Mode.CUBIC_BEZIER // Enable smooth curves
+                color = android.graphics.Color.parseColor("#3388FF")
+                valueTextColor = android.graphics.Color.WHITE
+//                lineWidth = 2.5f // Smooth and thin line
+                setDrawCircles(false) // Show dots
+                setDrawValues(false) // Hide labels on points
+
+//                // Customize dots at data points
+                circleRadius = 0f
+//                setCircleColor(android.graphics.Color.WHITE)
+
+                // Enable gradient fill
+                setDrawFilled(true)
+                fillDrawable = ContextCompat.getDrawable(context, R.drawable.chart_gradient) // Gradient fill
+            }
+
             val lineData = LineData(dataSet)
             this.data = lineData
-            this.invalidate()
+
+            // X-Axis settings (date labels)
+            xAxis.apply {
+                position = XAxis.XAxisPosition.BOTTOM
+                textColor = android.graphics.Color.WHITE
+                textSize = 12f
+                granularity = 1f
+                valueFormatter = IndexAxisValueFormatter(dates) // Set dates
+                setDrawGridLines(false) // Hide grid lines
+            }
+
+            // Y-Axis settings
+            axisLeft.apply {
+                setDrawLabels(false)
+                setDrawAxisLine(false)
+                setDrawGridLines(false) // Hide grid lines
+            }
+            axisRight.isEnabled = false // Disable right axis
+
+            description.isEnabled = false // Hide chart description
+            legend.isEnabled = false // Hide legend
+
+            setBackgroundColor(android.graphics.Color.parseColor("#0066FF")) // Match background color
+            setTouchEnabled(true) // Allow touch interactions
+            setPinchZoom(false) // Disable zoom
+
+            this.invalidate() // Refresh chart
         }
     }, modifier = Modifier
         .fillMaxWidth()
-        .height(200.dp))
+        .height(250.dp) // Adjust height
+        .clip(RoundedCornerShape(16.dp))
+        .border(1.dp, Color.Gray, RoundedCornerShape(16.dp))
+    )
 }
+
+
 
 @Composable
 fun TabButton(text: String, isActive: Boolean, onClick: (String) -> Unit) {
