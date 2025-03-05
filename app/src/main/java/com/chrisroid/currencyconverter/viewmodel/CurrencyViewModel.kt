@@ -13,12 +13,15 @@ import javax.inject.Inject
 @HiltViewModel
 class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepository) : ViewModel(){
 
-
-    private val _exchangeRate = MutableStateFlow<Map<String, Double>?>(null)
-    val exchangeRate = _exchangeRate.asStateFlow()
-
     private val _currencySymbols = MutableStateFlow<Map<String, String>?>(null)
     val currencySymbols = _currencySymbols.asStateFlow()
+
+    private val _exchangeRate = MutableStateFlow<Double?>(null)
+    val exchangeRate = _exchangeRate.asStateFlow()
+
+    private val _convertedAmount = MutableStateFlow<String>("")
+    val convertedAmount = _convertedAmount.asStateFlow()
+
 
     init {
         fetchCurrencySymbols()
@@ -35,7 +38,7 @@ class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepo
 
     fun fetchCurrencySymbols() {
         Log.d("FETCH", "Checking if database is empty before fetching")
-        val apiKey = "812b144374f18f73fd5fa73bd008dc1b"
+        val apiKey = "b1ec7d255c26e3eb047b505fa720cc02"
         viewModelScope.launch {
             repository.getCurrencySymbols(apiKey).collect { result ->
                 result.onSuccess { data ->
@@ -44,4 +47,17 @@ class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepo
             }
         }
     }
+
+    fun fetchExchangeRate(base: String, target: String, amount: String) {
+        viewModelScope.launch {
+            val apiKey = "b1ec7d255c26e3eb047b505fa720cc02"
+            repository.getExchangeRate(base, target, apiKey).collect { result ->
+                result.onSuccess { rate ->
+                    _exchangeRate.value = rate
+                }
+            }
+        }
+    }
+
+
 }

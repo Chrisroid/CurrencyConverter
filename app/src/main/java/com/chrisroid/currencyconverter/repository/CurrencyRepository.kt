@@ -40,5 +40,22 @@ class CurrencyRepository @Inject constructor(
             emit(Result.failure(e))
         }
     }
+
+    suspend fun getExchangeRate(base: String, target: String, apiKey: String): Flow<Result<Double>> = flow {
+        try {
+            val response = currencyApi.getLatestExchangeRate(apiKey, base, target)
+            if (response.success) {
+                val rate = response.rates[target] ?: 0.0
+                emit(Result.success(rate))
+            } else {
+                emit(Result.failure(Exception("Failed to fetch exchange rate")))
+            }
+        } catch (e: HttpException) {
+            emit(Result.failure(e))
+        } catch (e: IOException) {
+            emit(Result.failure(e))
+        }
+    }
+
 }
 

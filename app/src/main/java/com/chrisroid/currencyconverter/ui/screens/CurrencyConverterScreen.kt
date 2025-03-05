@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,16 +62,25 @@ import com.murgupluoglu.flagkit.FlagKit
 fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
     var amount by remember { mutableStateOf("1") }
-    var convertedAmount by remember { mutableStateOf("4.264820") } // Dummy value for PLN
     var selectedBase by remember { mutableStateOf("EUR") }
     var selectedTarget by remember { mutableStateOf("PLN") }
-    var conversionRate by remember { mutableStateOf(4.264820) } // Dummy value
+    val exchangeRate by viewModel.exchangeRate.collectAsState()
+    val convertedAmount by remember(amount, exchangeRate) {
+        mutableStateOf(
+            String.format("%.2f", (amount.toDoubleOrNull() ?: 0.0) * (exchangeRate ?: 1.0))
+        )
+    }
     var activeTab by remember { mutableStateOf("30 Days") }
 
     val past30DaysRates = listOf(4.1, 4.15, 4.2, 4.25, 4.26, 4.22, 4.3, 4.28, 4.35, 4.4)
 
     val currencySymbols by viewModel.currencySymbols.collectAsState()
 
+
+
+    LaunchedEffect(selectedTarget) {
+        viewModel.fetchExchangeRate(selectedBase, selectedTarget, amount)
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Row(
@@ -103,7 +113,9 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
         // First text field for the base currency (EUR)
         OutlinedTextField(
             value = amount,
-            onValueChange = { amount = it },
+            onValueChange = {
+                amount = it
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
             textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
@@ -122,12 +134,13 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
             )
         )
 
+
         Spacer(modifier = Modifier.height(8.dp))
 
         // Second text field for the target currency (PLN)
         OutlinedTextField(
             value = convertedAmount,
-            onValueChange = { convertedAmount = it },
+            onValueChange = { }, // Read-only field
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
             textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
