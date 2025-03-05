@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -26,12 +27,14 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CurrencyConverterScreen() {
     var amount by remember { mutableStateOf("1") }
+    var convertedAmount by remember { mutableStateOf("4.264820") } // Dummy value for PLN
     var selectedBase by remember { mutableStateOf("EUR") }
     var selectedTarget by remember { mutableStateOf("PLN") }
-    var conversionRate by remember { mutableStateOf(4.264) } // Dummy value
+    var conversionRate by remember { mutableStateOf(4.264820) } // Dummy value
     var activeTab by remember { mutableStateOf("30 Days") }
 
     val past30DaysRates = listOf(4.1, 4.15, 4.2, 4.25, 4.26, 4.22, 4.3, 4.28, 4.35, 4.4)
@@ -42,67 +45,132 @@ fun CurrencyConverterScreen() {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = { }) {
-                Icon(Icons.Default.ArrowDropDown, contentDescription = "Menu")
+                Icon(Icons.Default.Menu, contentDescription = "Menu")
             }
-            Text("Sign up", color = Color(0xFF00C896), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Sign up",
+                color = Color(0xFF00C896),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text("Currency", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0055FF))
-        Text("Calculator.", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0055FF))
+        Text(
+            "Calculator.",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF0055FF)
+        )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // First text field for the base currency (EUR)
         OutlinedTextField(
             value = amount,
             onValueChange = { amount = it },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
+            trailingIcon = {
+                Text(
+                    text = selectedBase,
+                    color = Color.Gray,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            },
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color(0xFF0055FF),
+                unfocusedBorderColor = Color.Gray
+            )
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Second text field for the target currency (PLN)
         OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
-            modifier = Modifier.fillMaxWidth()
+            value = convertedAmount,
+            onValueChange = { convertedAmount = it },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
+            trailingIcon = {
+                Text(
+                    text = selectedTarget,
+                    color = Color.Gray,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            },
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color(0xFF0055FF),
+                unfocusedBorderColor = Color.Gray
+            ),
+            readOnly = true
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-
+        Spacer(modifier = Modifier.height(16.dp))
+        // Currency selection row
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             CurrencyDropdown("EUR", R.drawable.germany) { selectedBase = it }
-            Text("⇆", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             CurrencyDropdown("PLN", R.drawable.canada) { selectedTarget = it }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Convert button
         Button(
             onClick = { /* Conversion Logic - Placeholder */ },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00C896))
         ) {
-            Text("Convert")
+            Text("Convert", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Mid-market exchange rate at 13:38 UTC", color = Color.Blue, fontSize = 14.sp)
-        Text("Exchange Rate: 1 EUR = $conversionRate PLN", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        // Exchange rate information
+        Text("Mid-market exchange rate at 13:38 UTC", color = Color.Gray, fontSize = 14.sp)
+        Text(
+            "Exchange Rate: 1 EUR = $conversionRate PLN",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Exchange rate graph
         val context = LocalContext.current
-        val activity = context as MainActivity
         ExchangeRateGraph(
             context = context,
             rates = past30DaysRates
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Tabs for 30 Days and 90 Days
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            TabButton("30 Days", activeTab == "30 Days") { activeTab = it }
+            TabButton("90 Days", activeTab == "90 Days") { activeTab = it }
+        }
     }
 }
 
 @Composable
 fun CurrencyDropdown(currencyCode: String, flagRes: Int, onSelection: (String) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(0.45f)) {
-        Image(painter = painterResource(id = flagRes), contentDescription = null, modifier = Modifier.size(24.dp))
+        Image(
+            painter = painterResource(id = flagRes),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp)
+        )
         Spacer(modifier = Modifier.width(8.dp))
         Text(currencyCode, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
@@ -123,7 +191,23 @@ fun ExchangeRateGraph(context: Context, rates: List<Double>) {
             this.data = lineData
             this.invalidate()
         }
-    }, modifier = Modifier.fillMaxWidth().height(200.dp))
+    }, modifier = Modifier
+        .fillMaxWidth()
+        .height(200.dp))
+}
+
+@Composable
+fun TabButton(text: String, isActive: Boolean, onClick: (String) -> Unit) {
+    Button(
+        onClick = { onClick(text) },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isActive) Color(0xFF00C896) else Color.LightGray,
+            contentColor = if (isActive) Color.White else Color.Black
+        ),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Text(text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
 }
 
 @Preview(showBackground = true)
@@ -131,4 +215,3 @@ fun ExchangeRateGraph(context: Context, rates: List<Double>) {
 fun PreviewCurrencyConverterScreen() {
     CurrencyConverterScreen()
 }
-
