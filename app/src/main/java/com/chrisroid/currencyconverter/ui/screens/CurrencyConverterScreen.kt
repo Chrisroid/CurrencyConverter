@@ -2,6 +2,7 @@ package com.chrisroid.currencyconverter.ui.screens
 
 import android.content.Context
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -148,17 +149,36 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
         // Currency selection row
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             CurrencyDropdown(
                 selectedCurrency = selectedBase,
-                onCurrencySelected = { selectedBase = it }
+                onCurrencySelected = { selectedBase = it },
+                modifier = Modifier.weight(1f) // Ensures equal space
             )
-            Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+
+            Spacer(modifier = Modifier.width(16.dp)) // Adds spacing between dropdowns
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("←", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text("→", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
             CurrencyDropdown(
                 selectedCurrency = selectedTarget,
-                onCurrencySelected = { selectedTarget = it }
+                onCurrencySelected = { selectedTarget = it },
+                modifier = Modifier.weight(1f) // Ensures equal space
             )
         }
+
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -177,7 +197,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
         // Exchange rate information
         Text("Mid-market exchange rate at 13:38 UTC", color = Color.Gray, fontSize = 14.sp)
         Text(
-            "Exchange Rate: 1 EUR = $conversionRate PLN",
+            "Exchange Rate: $amount $selectedBase = $convertedAmount $selectedTarget",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
@@ -185,9 +205,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Exchange rate graph
-        val context = LocalContext.current
         ExchangeRateGraph(
-            context = context,
             rates = past30DaysRates
         )
 
@@ -204,12 +222,13 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 @Composable
 fun CurrencyDropdown(
     selectedCurrency: String,
-    onCurrencySelected: (String) -> Unit
+    onCurrencySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Precompute flags to avoid lag on menu open
+    // Precompute flags to prevent UI lag
     val flagCache = remember {
         currencyToCountryMap.mapValues { (code, countryCode) ->
             when (code) {
@@ -220,15 +239,18 @@ fun CurrencyDropdown(
         }
     }
 
-    Box(modifier = Modifier.fillMaxWidth(0.45f)) {
+    Box(
+        modifier = modifier
+            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+            .fillMaxWidth()
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
-                    expanded = true // Ensure immediate state update
-                }
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable { expanded = true }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween // Ensures even spacing
         ) {
             val flagResId = flagCache[selectedCurrency] ?: R.drawable.btc
             Image(
@@ -240,9 +262,18 @@ fun CurrencyDropdown(
             )
 
             Spacer(modifier = Modifier.width(8.dp))
-            Text(selectedCurrency, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "Dropdown")
+            Text(
+                text = selectedCurrency,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f) // Ensures both dropdowns are balanced
+            )
+
+            Icon(
+                Icons.Default.ArrowDropDown,
+                contentDescription = "Dropdown",
+                modifier = Modifier.size(24.dp) // Ensures the dropdown arrow is always visible
+            )
         }
 
         DropdownMenu(
@@ -281,9 +312,8 @@ fun CurrencyDropdown(
 
 
 
-
 @Composable
-fun ExchangeRateGraph(context: Context, rates: List<Double>) {
+fun ExchangeRateGraph(rates: List<Double>) {
     AndroidView(factory = {
         LineChart(it).apply {
             val entries = rates.mapIndexed { index, rate ->
