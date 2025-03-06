@@ -41,6 +41,25 @@ android {
     buildFeatures {
         compose = true
     }
+
+    packagingOptions {
+        resources {
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/LICENSE-notice.md"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/NOTICE"
+        }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.test.ext:junit:1.1.5")
+        force("androidx.test.espresso:espresso-core:3.5.0")
+        force("io.mockk:mockk:1.13.5")
+        force("io.mockk:mockk-android:1.13.5")
+    }
 }
 
 dependencies {
