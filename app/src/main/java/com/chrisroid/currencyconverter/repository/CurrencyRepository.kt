@@ -4,6 +4,7 @@ import com.chrisroid.currencyconverter.model.api.CurrencyApi
 import com.chrisroid.currencyconverter.model.dao.CurrencyDao
 import com.chrisroid.currencyconverter.model.data.CurrencySymbolEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import retrofit2.HttpException
 import java.io.IOException
@@ -65,26 +66,14 @@ class CurrencyRepository @Inject constructor(
      * @param apiKey The API key to authenticate the request.
      * @return A Flow emitting a Result containing the exchange rate or an error.
      */
-    suspend fun getExchangeRate(base: String, target: String, apiKey: String): Flow<Result<Double>> = flow {
-        try {
-            // Fetch the exchange rate from the API
-            val response = currencyApi.getLatestExchangeRate(apiKey, base, target)
-
-            // Check if the API response was successful
-            if (response.success) {
-                // Extract the exchange rate for the target currency
-                val rate = response.rates[target] ?: 0.0 // Default to 0.0 if no rate found
-                emit(Result.success(rate)) // Emit the rate as a successful result
-            } else {
-                // Emit failure if the API request was unsuccessful
-                emit(Result.failure(Exception("Failed to fetch exchange rate")))
-            }
-        } catch (e: HttpException) {
-            // Handle HTTP exceptions, such as 404 or 500 errors
-            emit(Result.failure(e))
-        } catch (e: IOException) {
-            // Handle network-related exceptions, such as no internet connection
-            emit(Result.failure(e))
+    suspend fun getExchangeRate(base: String, target: String, apiKey: String) = flow {
+        val response = currencyApi.getLatestExchangeRate(apiKey, base, target)
+        if (response.success) {
+            val rate = response.rates[target] ?: throw Exception("Target currency not found in response")
+            emit(Result.success(rate))
+        } else {
+            emit(Result.failure(Exception("API request was unsuccessful")))
         }
-    }
-}
+    }.catch { e ->
+        emit(Result.failure(Exception("Network error: ${e.message}")))
+    }}

@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.ui.test.junit4.android)
     kapt(libs.androidx.room.compiler)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.mpandroidchart)
@@ -71,6 +72,20 @@ dependencies {
     kapt(libs.hilt.compiler)
 
     implementation(libs.flagkit.android)
+
+
+    androidTestImplementation(libs.ui.test.junit4)
+    debugImplementation(libs.ui.test.manifest)
+    androidTestImplementation(libs.androidx.navigation.testing)
+    androidTestImplementation(libs.mockito.core)
+    androidTestImplementation(libs.mockito.android)
+
+    // Unit testing dependencies (for JVM tests in `test/`)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+// UI testing dependencies (for `androidTest/`)
+    androidTestImplementation(libs.mockk.android)
 
 
     testImplementation(libs.junit)
