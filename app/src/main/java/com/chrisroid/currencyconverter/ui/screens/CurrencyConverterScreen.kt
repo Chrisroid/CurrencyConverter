@@ -69,6 +69,7 @@ import com.murgupluoglu.flagkit.FlagKit
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
@@ -113,10 +114,10 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Currency", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0055FF))
+        Text("Currency", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0055FF))
         Text(
             "Calculator.",
-            fontSize = 28.sp,
+            fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF0055FF)
         )
@@ -287,23 +288,23 @@ fun CurrencyDropdown(
     selectedCurrency: String,
     onCurrencySelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    isBaseCurrency: Boolean // Determines whether this is the base or target dropdown
+    isBaseCurrency: Boolean // Determines if this is the base or target dropdown
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) } // State for dropdown visibility
     val context = LocalContext.current
 
-    // Precompute flags to prevent UI lag
+    // Precompute flag images to prevent UI lag
     val flagCache = remember {
         currencyToCountryMap.mapValues { (code, countryCode) ->
             when (code) {
                 "ANG" -> R.drawable.angola  // Custom Angola flag
                 "BTC" -> R.drawable.btc // Custom Bitcoin flag
-                else -> FlagKit.getResId(context, countryCode)
+                else -> FlagKit.getResId(context, countryCode) // Get country flag resource ID
             }
         }
     }
 
-    // Filter available currencies based on whether it's base or target
+    // Get the list of currencies available for selection
     val availableCurrencies = if (isBaseCurrency) listOf("EUR") else currencyToCountryMap.keys.filter { it != "EUR" }
 
     Box(
@@ -311,13 +312,14 @@ fun CurrencyDropdown(
             .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
             .fillMaxWidth()
     ) {
+        // Dropdown button layout
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = true }
+                .clickable { expanded = true } // Open dropdown when clicked
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween // Ensures even spacing
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             val flagResId = flagCache[selectedCurrency] ?: R.drawable.btc
             Image(
@@ -329,24 +331,27 @@ fun CurrencyDropdown(
             )
 
             Spacer(modifier = Modifier.width(8.dp))
+
+            // Display selected currency
             Text(
                 text = selectedCurrency,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f) // Ensures both dropdowns are balanced
+                modifier = Modifier.weight(1f) // Ensures balanced dropdown alignment
             )
 
             Icon(
                 Icons.Default.ArrowDropDown,
                 contentDescription = "Dropdown",
-                modifier = Modifier.size(24.dp) // Ensures the dropdown arrow is always visible
+                modifier = Modifier.size(24.dp) // Dropdown arrow
             )
         }
 
+        // Dropdown menu for selecting currency
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.45f)
+            onDismissRequest = { expanded = false }, // Close dropdown on selection
+            modifier = Modifier.fillMaxWidth(0.45f) // Adjust dropdown width
         ) {
             availableCurrencies.forEach { currencyCode ->
                 DropdownMenuItem(
@@ -377,89 +382,87 @@ fun CurrencyDropdown(
     }
 }
 
-
-
-
 @Composable
 fun ExchangeRateGraph(rates: List<Double>, dates: List<String>) {
     AndroidView(factory = { context ->
         LineChart(context).apply {
+            // Prepare data points for the line chart
             val entries = rates.mapIndexed { index, rate ->
                 Entry(index.toFloat(), rate.toFloat())
             }
 
+            // Configure dataset for the graph
             val dataSet = LineDataSet(entries, "Exchange Rate").apply {
-                mode = LineDataSet.Mode.CUBIC_BEZIER // Enable smooth curves
-                color = android.graphics.Color.parseColor("#3388FF")
-                valueTextColor = android.graphics.Color.WHITE
-//                lineWidth = 2.5f // Smooth and thin line
-                setDrawCircles(false) // Show dots
-                setDrawValues(false) // Hide labels on points
+                mode = LineDataSet.Mode.CUBIC_BEZIER // Smooth curve line
+                color = android.graphics.Color.parseColor("#3388FF") // Line color
+                valueTextColor = android.graphics.Color.WHITE // Hide value labels
+                setDrawCircles(false) // Remove point circles
+                setDrawValues(false) // Remove value labels
 
-//                // Customize dots at data points
-                circleRadius = 0f
-//                setCircleColor(android.graphics.Color.WHITE)
-
-                // Enable gradient fill
+                // Enable gradient fill under the line
                 setDrawFilled(true)
-                fillDrawable = ContextCompat.getDrawable(context, R.drawable.chart_gradient) // Gradient fill
+                fillDrawable = ContextCompat.getDrawable(context, R.drawable.chart_gradient)
             }
 
+            // Assign dataset to the chart
             val lineData = LineData(dataSet)
             this.data = lineData
 
-            // X-Axis settings (date labels)
+            // Configure X-axis (date labels)
             xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 textColor = android.graphics.Color.WHITE
                 textSize = 10f
                 granularity = 1f
-                labelRotationAngle = -25f
-                valueFormatter = IndexAxisValueFormatter(dates) // Set dates
+                labelRotationAngle = -25f // Rotate labels for readability
+                valueFormatter = IndexAxisValueFormatter(dates) // Apply date labels
                 setDrawGridLines(false) // Hide grid lines
             }
 
-            // Y-Axis settings
+            // Configure Y-axis
             axisLeft.apply {
-                setDrawLabels(false)
+                setDrawLabels(false) // Hide numeric labels
                 setDrawAxisLine(false)
                 setDrawGridLines(false) // Hide grid lines
             }
             axisRight.isEnabled = false // Disable right axis
 
-            description.isEnabled = false // Hide chart description
-            legend.isEnabled = false // Hide legend
+            // Hide chart description and legend
+            description.isEnabled = false
+            legend.isEnabled = false
 
-            setBackgroundColor(android.graphics.Color.parseColor("#0066FF")) // Match background color
-            setTouchEnabled(true) // Allow touch interactions
+            // Set chart background and interaction settings
+            setBackgroundColor(android.graphics.Color.parseColor("#0066FF")) // Background color
+            setTouchEnabled(true) // Enable touch interaction
             setPinchZoom(false) // Disable zoom
 
             this.invalidate() // Refresh chart
         }
     }, modifier = Modifier
         .fillMaxWidth()
-        .height(250.dp) // Adjust height
+        .height(250.dp) // Chart height
         .clip(RoundedCornerShape(16.dp))
         .border(1.dp, Color.Gray, RoundedCornerShape(16.dp))
     )
 }
 
-
-
 @Composable
 fun TabButton(text: String, isActive: Boolean, onClick: (String) -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = { onClick(text) })
+        modifier = Modifier.clickable(onClick = { onClick(text) }) // Handle click event
     ) {
+        // Display the tab text
         Text(
             text,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = if (isActive) Color.White else Color.LightGray
         )
-        Spacer(modifier = Modifier.height(4.dp)) // Space between text and dot
 
+        Spacer(modifier = Modifier.height(4.dp)) // Space between text and dot indicator
+
+        // Show a green dot indicator under the active tab
         if (isActive) {
             Box(
                 modifier = Modifier
@@ -470,6 +473,7 @@ fun TabButton(text: String, isActive: Boolean, onClick: (String) -> Unit) {
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
@@ -513,11 +517,12 @@ val currencyToCountryMap = mapOf(
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun getLast30DaysLabels(): List<String> {
-    val today = LocalDate.now()
-    val formatter = DateTimeFormatter.ofPattern("dd MMM")
+    val today = LocalDate.now() // Get current date
+    val formatter = DateTimeFormatter.ofPattern("dd MMM") // Define date format
 
     return (0..30 step 6).map { daysAgo ->
-        today.minusDays((30 - daysAgo).toLong()).format(formatter)
+        today.minusDays((30 - daysAgo).toLong()).format(formatter) // Generate past dates
     }
 }
+
 
