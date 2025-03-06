@@ -11,53 +11,69 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CurrencyViewModel @Inject constructor(private val repository: CurrencyRepository) : ViewModel(){
+class CurrencyViewModel @Inject constructor(
+    private val repository: CurrencyRepository // Inject repository for API calls
+) : ViewModel() {
 
+    // State flow to hold currency symbols (mapping of currency codes to names)
     private val _currencySymbols = MutableStateFlow<Map<String, String>?>(null)
-    val currencySymbols = _currencySymbols.asStateFlow()
+    val currencySymbols = _currencySymbols.asStateFlow() // Expose as immutable flow
 
+    // State flow to hold exchange rate result
     private val _exchangeRate = MutableStateFlow<Double?>(null)
-    val exchangeRate = _exchangeRate.asStateFlow()
+    val exchangeRate = _exchangeRate.asStateFlow() // Expose as immutable flow
 
+    // State flow to hold converted amount (for UI binding)
     private val _convertedAmount = MutableStateFlow<String>("")
-    val convertedAmount = _convertedAmount.asStateFlow()
+    val convertedAmount = _convertedAmount.asStateFlow() // Expose as immutable flow
 
+    // API key (Consider moving this to a secure config or environment variable)
+    private val apiKey = "b1ec7d255c26e3eb047b505fa720cc02"
 
     init {
-        fetchCurrencySymbols()
+        fetchCurrencySymbols() // Fetch currency symbols on ViewModel initialization
     }
-//    fun fetchExchangeRate(base: String, apiKey: String) {
-//        viewModelScope.launch {
-//            repository.getExchangeRate(base, apiKey).collect { result ->
-//                result.onSuccess { data ->
-//                    _exchangeRate.value = data.rates
-//                }
-//            }
-//        }
-//    }
 
-    fun fetchCurrencySymbols() {
-        Log.d("FETCH", "Checking if database is empty before fetching")
-        val apiKey = "b1ec7d255c26e3eb047b505fa720cc02"
+    /**
+     * Fetches available currency symbols from the API and updates the state flow.
+     * Handles potential errors gracefully and logs failures.
+     */
+    private fun fetchCurrencySymbols() {
+        Log.d("CurrencyViewModel", "Fetching currency symbols...")
+
         viewModelScope.launch {
             repository.getCurrencySymbols(apiKey).collect { result ->
                 result.onSuccess { data ->
-                    _currencySymbols.value = data
+                    _currencySymbols.value = data // Update state on success
+                    Log.d("CurrencyViewModel", "Currency symbols loaded successfully")
+                }.onFailure { exception ->
+                    // Handle errors and log the failure
+                    Log.e("CurrencyViewModel", "Failed to fetch currency symbols", exception)
                 }
             }
         }
     }
 
+    /**
+     * Fetches the exchange rate between a base currency and target currency.
+     * Handles errors and updates the exchange rate state.
+     *
+     * @param base The base currency (e.g., "USD").
+     * @param target The target currency (e.g., "NGN").
+     */
     fun fetchExchangeRate(base: String, target: String) {
+        Log.d("CurrencyViewModel", "Fetching exchange rate: $base to $target")
+
         viewModelScope.launch {
-            val apiKey = "b1ec7d255c26e3eb047b505fa720cc02"
             repository.getExchangeRate(base, target, apiKey).collect { result ->
                 result.onSuccess { rate ->
-                    _exchangeRate.value = rate
+                    _exchangeRate.value = rate // Update exchange rate on success
+                    Log.d("CurrencyViewModel", "Exchange rate fetched: $rate")
+                }.onFailure { exception ->
+                    // Handle errors and log failure
+                    Log.e("CurrencyViewModel", "Failed to fetch exchange rate", exception)
                 }
             }
         }
     }
-
-
 }
