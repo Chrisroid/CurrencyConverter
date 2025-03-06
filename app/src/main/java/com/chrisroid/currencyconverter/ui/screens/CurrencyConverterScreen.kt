@@ -3,6 +3,7 @@ package com.chrisroid.currencyconverter.ui.screens
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,8 +46,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -224,7 +228,18 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Exchange rate information
-        Text("Mid-market exchange rate at 13:38 UTC", color = Color.Gray, fontSize = 14.sp)
+        Text(
+            text = "Mid-market exchange rate at 13:38 UTC",
+            color = Color(0xFF0055FF), // Blue color
+            fontSize = 14.sp,
+            modifier = Modifier
+                .fillMaxWidth() // Ensures it takes full width
+                .clickable { /* Handle click if needed */ },
+            textAlign = TextAlign.Center, // Centers text horizontally
+            style = TextStyle(textDecoration = TextDecoration.Underline) // Underline effect
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
             "Exchange Rate: $amount $selectedBase = $convertedAmount $selectedTarget",
             fontSize = 20.sp,
@@ -233,16 +248,37 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF0066FF)) // Blue background
+                .padding(16.dp) // Padding inside the box
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Tabs for 30 Days and 90 Days
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    TabButton("30 Days", activeTab == "30 Days") { activeTab = it }
+                    TabButton("90 Days", activeTab == "90 Days") { activeTab = it }
+                }
 
-        ExchangeRateGraph(rates = past30DaysRates, dates = past30DaysDates)
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+                // Exchange Rate Graph
+                ExchangeRateGraph(rates = past30DaysRates, dates = past30DaysDates)
 
-        // Tabs for 30 Days and 90 Days
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            TabButton("30 Days", activeTab == "30 Days") { activeTab = it }
-            TabButton("90 Days", activeTab == "90 Days") { activeTab = it }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
+
+
+
     }
 }
 
@@ -412,15 +448,26 @@ fun ExchangeRateGraph(rates: List<Double>, dates: List<String>) {
 
 @Composable
 fun TabButton(text: String, isActive: Boolean, onClick: (String) -> Unit) {
-    Button(
-        onClick = { onClick(text) },
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isActive) Color(0xFF00C896) else Color.LightGray,
-            contentColor = if (isActive) Color.White else Color.Black
-        ),
-        shape = RoundedCornerShape(20.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = { onClick(text) })
     ) {
-        Text(text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (isActive) Color.White else Color.LightGray
+        )
+        Spacer(modifier = Modifier.height(4.dp)) // Space between text and dot
+
+        if (isActive) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp) // Small dot size
+                    .clip(CircleShape)
+                    .background(Color(0xFF00C896)) // Green dot color
+            )
+        }
     }
 }
 
